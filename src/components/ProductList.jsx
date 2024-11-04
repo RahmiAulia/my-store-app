@@ -1,7 +1,10 @@
-// src/components/ProductListTable.js
 import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteProduct, getAllProducts, updateProduct } from "../service/productService";
+import {
+  deleteProduct,
+  getAllProducts,
+  updateProduct,
+} from "../service/productService";
 import {
   useReactTable,
   flexRender,
@@ -18,11 +21,15 @@ import {
   TablePagination,
   Fab,
   Button,
+  Box,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import DownloadIcon from "@mui/icons-material/Download";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import { useNavigate } from "react-router-dom";
-import NiceModal from "@ebay/nice-modal-react"; // Make sure you have NiceModal imported
-import AlertModal from './AlertModal'; // Import AlertModal
+import NiceModal from "@ebay/nice-modal-react";
+import AlertModal from "./AlertModal";
 
 const ProductListTable = () => {
   const navigate = useNavigate();
@@ -40,21 +47,27 @@ const ProductListTable = () => {
 
   const [alertMessage, setAlertMessage] = React.useState("");
   const [isSuccess, setIsSuccess] = React.useState(false);
-  
+
   const deleteMutation = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries(["products"]);
-      setAlertMessage("Product deleted successfully!"); // Set success message
-      setIsSuccess(true); // Indicate success
-      NiceModal.show(AlertModal, { message: "Product deleted successfully!", isSuccess: true }); // Show success alert
+      setAlertMessage("Product deleted successfully!");
+      setIsSuccess(true);
+      NiceModal.show(AlertModal, {
+        message: "Product deleted successfully!",
+        isSuccess: true,
+      });
     },
     onError: (error) => {
       console.error("Failed to delete product:", error);
-      setAlertMessage("Failed to delete product: " + error.message); // Set error message
-      setIsSuccess(false); // Indicate failure
-      NiceModal.show(AlertModal, { message: "Failed to delete product: " + error.message, isSuccess: false }); // Show error alert
-    }
+      setAlertMessage("Failed to delete product: " + error.message);
+      setIsSuccess(false);
+      NiceModal.show(AlertModal, {
+        message: "Failed to delete product: " + error.message,
+        isSuccess: false,
+      });
+    },
   });
 
   const updateMutation = useMutation({
@@ -73,13 +86,41 @@ const ProductListTable = () => {
     ],
     []
   );
-  
+
   const handleDelete = (id) => {
     deleteMutation.mutate(id);
   };
 
   const handleUpdate = (id) => {
     navigate(`/update-product/${id}`);
+  };
+
+  const handleDownloadExcel = () => {
+    //Mengambil data yang ditampilkan sesuai dengan halaman aktif dan filter
+    const visibleData = table
+      .getRowModel()
+      .rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+      .map((row) => {
+        const rowData = {};
+        row.getVisibleCells().forEach((cell) => {
+          const header = cell.column.columnDef.header; //Ngambil nama header
+          rowData[header] = cell.getValue();
+        });
+        return rowData;
+      });
+
+    //Konversi data menjadi Excel dengan judul kolom sesuai tampilan
+    const worksheet = XLSX.utils.json_to_sheet(visibleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Products");
+
+    //Membuat dan mengunduh file
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, "products_filtered.xlsx");
   };
 
   const [page, setPage] = React.useState(0);
@@ -105,6 +146,26 @@ const ProductListTable = () => {
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        <Button
+          variant="contained"
+          color="success"
+          size="small"
+          startIcon={<DownloadIcon />}
+          sx={{
+            margin: "10px",
+          }}
+          onClick={handleDownloadExcel}
+        >
+          Download
+        </Button>
+      </Box>
+
       <TableContainer
         component={Paper}
         sx={{
