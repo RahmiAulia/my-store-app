@@ -35,34 +35,24 @@ const ProductListTable = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const {
-    data: products = [],
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
+  const { data: products = [], isLoading, isError, error } = useQuery({
     queryKey: ["products"],
     queryFn: getAllProducts,
   });
 
-  const [alertMessage, setAlertMessage] = React.useState("");
-  const [isSuccess, setIsSuccess] = React.useState(false);
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
   const deleteMutation = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries(["products"]);
-      setAlertMessage("Product deleted successfully!");
-      setIsSuccess(true);
       NiceModal.show(AlertModal, {
         message: "Product deleted successfully!",
         isSuccess: true,
       });
     },
     onError: (error) => {
-      console.error("Failed to delete product:", error);
-      setAlertMessage("Failed to delete product: " + error.message);
-      setIsSuccess(false);
       NiceModal.show(AlertModal, {
         message: "Failed to delete product: " + error.message,
         isSuccess: false,
@@ -87,6 +77,12 @@ const ProductListTable = () => {
     []
   );
 
+  const table = useReactTable({
+    data: products,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
   const handleDelete = (id) => {
     deleteMutation.mutate(id);
   };
@@ -95,36 +91,30 @@ const ProductListTable = () => {
     navigate(`/update-product/${id}`);
   };
 
-  const handleDownloadExcel = () => {
-    //Mengambil data yang ditampilkan sesuai dengan halaman aktif dan filter
+  const handleDownloadExcel = React.useCallback(() => {
     const visibleData = table
       .getRowModel()
       .rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
       .map((row) => {
         const rowData = {};
         row.getVisibleCells().forEach((cell) => {
-          const header = cell.column.columnDef.header; //Ngambil nama header
+          const header = cell.column.columnDef.header;
           rowData[header] = cell.getValue();
         });
         return rowData;
       });
 
-    //Konversi data menjadi Excel dengan judul kolom sesuai tampilan
     const worksheet = XLSX.utils.json_to_sheet(visibleData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Products");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
 
-    //Membuat dan mengunduh file
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
     });
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(blob, "products_filtered.xlsx");
-  };
-
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  }, [page, rowsPerPage, table]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -135,54 +125,30 @@ const ProductListTable = () => {
     setPage(0);
   };
 
-  const table = useReactTable({
-    data: products,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p>Error: {error.message}</p>;
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "flex-end", padding: "10px" }}>
         <Button
           variant="contained"
           color="success"
           size="small"
           startIcon={<DownloadIcon />}
-          sx={{
-            margin: "10px",
-          }}
           onClick={handleDownloadExcel}
         >
           Download
         </Button>
       </Box>
-
-      <TableContainer
-        component={Paper}
-        sx={{
-          maxHeight: 440,
-          overflowX: "auto",
-        }}
-      >
+      <TableContainer component={Paper} sx={{ maxHeight: 440, overflowX: "auto" }}>
         <Table stickyHeader aria-label="sticky table">
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableCell key={header.id}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
+                    {flexRender(header.column.columnDef.header, header.getContext())}
                   </TableCell>
                 ))}
                 <TableCell key="actions">Actions</TableCell>
@@ -190,17 +156,12 @@ const ProductListTable = () => {
             ))}
           </TableHead>
           <TableBody>
-            {table
-              .getRowModel()
-              .rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            {table.getRowModel().rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                   <TableCell>
@@ -217,7 +178,7 @@ const ProductListTable = () => {
                       variant="contained"
                       color="secondary"
                       size="small"
-                      style={{ marginLeft: "8px" }}
+                      sx={{ ml: 1 }}
                     >
                       Delete
                     </Button>
@@ -235,10 +196,6 @@ const ProductListTable = () => {
         page={page}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        sx={{
-          display: "flex",
-          justifyContent: "flex-start",
-        }}
       />
       <Fab
         color="primary"
@@ -257,6 +214,7 @@ const ProductListTable = () => {
 };
 
 export default ProductListTable;
+
 
 //dengan custom hook
 // src/hooks/useProducts.js

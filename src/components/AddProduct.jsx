@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import NiceModal from "@ebay/nice-modal-react";
 import AlertModal from "../components/AlertModal";
 import { addNewProduct } from "../service/productService";
@@ -13,6 +14,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const AddProduct = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [productData, setProductData] = useState({
@@ -46,14 +48,13 @@ const AddProduct = () => {
       setLocalProducts(updatedProducts);
       localStorage.setItem("products", JSON.stringify(updatedProducts));
 
-      // Memunculkan modal sukses
       NiceModal.show(AlertModal, {
         message: "Product added successfully!",
         isSuccess: true,
       });
+      navigate("/");
     },
     onError: (error) => {
-      // Memunculkan modal error
       NiceModal.show(AlertModal, {
         message: `Failed to add product: ${error.message}`,
         isSuccess: false,
@@ -71,6 +72,25 @@ const AddProduct = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    //Validasi harga tidak negatif
+    if (productData.price < 0) {
+      NiceModal.show(AlertModal, {
+        message: "Price cannot be negative!",
+        isSuccess: false,
+      });
+      return;
+    }
+
+    //INput tidak bisa dilakukan jika hanya spasi kosong
+    if (Object.values(productData).some((field) => field.trim() === "")) {
+      NiceModal.show(AlertModal, {
+        message: "All fields are required and cannot contain only spaces.",
+        isSuccess: false,
+      });
+      return;
+    }
+
     mutation.mutate(productData);
   };
 
@@ -98,6 +118,7 @@ const AddProduct = () => {
               value={productData.price}
               onChange={handleChange}
               type="number"
+              inputProps={{ min: "0" }} //Menjaga harga tetap positif
               fullWidth
               required
             />

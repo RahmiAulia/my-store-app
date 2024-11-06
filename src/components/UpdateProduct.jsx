@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getSingleProduct, updateProduct } from "../service/productService"; 
+import { getSingleProduct, updateProduct } from "../service/productService";
 import {
   Button,
   CircularProgress,
@@ -10,6 +10,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
+import NiceModal from "@ebay/nice-modal-react";
+import AlertModal from "./AlertModal";
 
 const UpdateProduct = () => {
   const { id } = useParams();
@@ -28,16 +30,25 @@ const UpdateProduct = () => {
     queryKey: ["product", id],
     queryFn: () => getSingleProduct(id),
     onSuccess: (data) => {
-      console.log("Fetched product data: ", data); // Log fetched data
-      setProductData(data); // Set fetched data to state
+      setProductData(data);
     },
-    enabled: !!id, // Only run if id exists
+    enabled: !!id,
   });
 
   const updateMutation = useMutation({
     mutationFn: (updatedData) => updateProduct(id, updatedData),
     onSuccess: () => {
-      navigate("/"); // Redirect to product list after successful update
+      NiceModal.show(AlertModal, {
+        message: "Product updated successfully!",
+        isSuccess: true,
+      });
+      navigate("/"); // Redirect to product list after showing success alert
+    },
+    onError: (error) => {
+      NiceModal.show(AlertModal, {
+        message: "Failed to update product: " + error.message,
+        isSuccess: false,
+      });
     },
   });
 
@@ -136,9 +147,6 @@ const UpdateProduct = () => {
       </form>
       {updateMutation.isError && (
         <Typography color="error">Error: {updateMutation.error.message}</Typography>
-      )}
-      {updateMutation.isSuccess && (
-        <Typography color="success">Product updated successfully!</Typography>
       )}
     </Paper>
   );
