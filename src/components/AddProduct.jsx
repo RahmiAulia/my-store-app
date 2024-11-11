@@ -73,8 +73,11 @@ const AddProduct = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+      // Pastikan harga adalah angka dengan konversi ke Number
+  const priceValue = Number(productData.price);
+
     //Validasi harga tidak negatif
-    if (productData.price < 0) {
+    if (priceValue < 0) {
       NiceModal.show(AlertModal, {
         message: "Price cannot be negative!",
         isSuccess: false,
@@ -130,8 +133,8 @@ const AddProduct = () => {
               value={productData.description}
               onChange={handleChange}
               fullWidth
-              multiline
-              rows={4}
+              // multiline
+              // rows={4}
               required
             />
           </Grid>
