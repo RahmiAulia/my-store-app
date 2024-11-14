@@ -35,7 +35,12 @@ const ProductListTable = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: products = [], isLoading, isError, error } = useQuery({
+  const {
+    data: products = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["products"],
     queryFn: getAllProducts,
   });
@@ -130,7 +135,9 @@ const ProductListTable = () => {
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <Box sx={{ display: "flex", justifyContent: "flex-end", padding: "10px" }}>
+      <Box
+        sx={{ display: "flex", justifyContent: "flex-end", padding: "10px" }}
+      >
         <Button
           variant="contained"
           color="success"
@@ -141,14 +148,20 @@ const ProductListTable = () => {
           Download
         </Button>
       </Box>
-      <TableContainer component={Paper} sx={{ maxHeight: 440, overflowX: "auto" }}>
+      <TableContainer
+        component={Paper}
+        sx={{ maxHeight: 440, overflowX: "auto" }}
+      >
         <Table stickyHeader aria-label="sticky table">
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableCell key={header.id}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
                   </TableCell>
                 ))}
                 <TableCell key="actions">Actions</TableCell>
@@ -156,12 +169,17 @@ const ProductListTable = () => {
             ))}
           </TableHead>
           <TableBody>
-            {table.getRowModel().rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            {table
+              .getRowModel()
+              .rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                   <TableCell>
@@ -196,6 +214,11 @@ const ProductListTable = () => {
         page={page}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
+        sx={{
+          display: "flex",
+          justifyContent: "flex-start",
+          paddingLeft: 2,
+        }}
       />
       <Fab
         color="primary"
