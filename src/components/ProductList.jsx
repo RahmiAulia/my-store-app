@@ -215,8 +215,6 @@ const ProductListTable = () => {
 
 export default ProductListTable;
 
-
-//dengan custom hook
 // src/hooks/useProducts.js
 
 // import { useQuery } from '@tanstack/react-query';

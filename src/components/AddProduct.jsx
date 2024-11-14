@@ -73,10 +73,10 @@ const AddProduct = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-      // Pastikan harga adalah angka dengan konversi ke Number
-  const priceValue = Number(productData.price);
+    // Convert price to a number for accurate validation
+    const priceValue = Number(productData.price);
 
-    //Validasi harga tidak negatif
+    // Validate that price is not negative
     if (priceValue < 0) {
       NiceModal.show(AlertModal, {
         message: "Price cannot be negative!",
@@ -85,7 +85,7 @@ const AddProduct = () => {
       return;
     }
 
-    //INput tidak bisa dilakukan jika hanya spasi kosong
+    // Validate that all fields are filled and do not contain only spaces
     if (Object.values(productData).some((field) => field.trim() === "")) {
       NiceModal.show(AlertModal, {
         message: "All fields are required and cannot contain only spaces.",
@@ -94,6 +94,7 @@ const AddProduct = () => {
       return;
     }
 
+    // Trigger the mutation to add the product
     mutation.mutate(productData);
   };
 
@@ -121,7 +122,6 @@ const AddProduct = () => {
               value={productData.price}
               onChange={handleChange}
               type="number"
-              inputProps={{ min: "0" }} //Menjaga harga tetap positif
               fullWidth
               required
             />
@@ -133,8 +133,6 @@ const AddProduct = () => {
               value={productData.description}
               onChange={handleChange}
               fullWidth
-              // multiline
-              // rows={4}
               required
             />
           </Grid>
@@ -180,3 +178,4 @@ const AddProduct = () => {
 };
 
 export default AddProduct;
+ 

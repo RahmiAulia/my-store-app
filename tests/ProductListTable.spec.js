@@ -7,12 +7,12 @@ test.describe("Store App Tests", () => {
 
   test("Harus menampilkan header halaman dengan benar", async ({ page }) => {
     const header = page.locator('text="Product"');
-    await expect(header).toBeVisible(); //Memastikan header terlihat di halaman
+    await expect(header).toBeVisible(); // Memastikan header terlihat di halaman
     await expect(header).toHaveText("Product"); // Verifikasi teks header
   });
 
   test("Harus menampilkan daftar produk", async ({ page }) => {
-    await expect(page.locator("Table")).toBeVisible();
+    await expect(page.locator("table")).toBeVisible();
     const rowCount = await page.locator("table tbody tr").count();
     expect(rowCount).toBeGreaterThan(0);
   });
@@ -31,31 +31,105 @@ test.describe("Store App Tests", () => {
     await expect(priceCell).not.toHaveText("");
   });
 
-  // test('Harus memungkinkan menghapus produk', async ({ page }) => {
-  //   await page.click('table tbody tr:first-child button:has-text("Delete")');
-  //   const modal = page.locator('.modal');
-  //   await expect(modal).toBeVisible();
-  //   await modal.click('button:has-text("Confirm")');
-  //   const rowCountAfterDelete = await page.locator('table tbody tr').count();
-  //   const rowCountBeforeDelete = await page.locator('table tbody tr').count();
-  //   expect(rowCountAfterDelete).toBeLessThan(rowCountBeforeDelete);
-  // });
+  test("Harus mengarahkan halaman ke halaman update-product saat tombol Update diklik", async ({ page }) => {
+    // Klik tombol Update pada baris pertama tabel
+    const firstRowUpdateButton = page.locator(
+      "table tbody tr:first-child button:has-text('Update')"
+    );
+    await firstRowUpdateButton.click();
 
-  test("Harus mengarahkan halaman ke halaman add-product saat FAB diklik", async ({
-    page,
-  }) => {
-    //menemunkan fab dengan selector
-    const fabButton = page.locator('button[aria-label = "add"]');
+    // Verifikasi URL diarahkan ke halaman update-product dengan ID produk
+    await expect(page).toHaveURL(/http:\/\/localhost:5173\/update-product\/\d+/);
 
-    //verifikasi bahwa fab ada di halaman
+    // Verifikasi form update muncul dengan input data produk
+    const updateFormTitle = page.locator('button:has-text("Update Product")');
+    await expect(updateFormTitle).toBeVisible();
+  });
+
+  test("Harus memungkinkan export data produk ke file Excel", async ({ page }) => {
+    // Klik tombol Download untuk export data
+    await page.waitForSelector('button:has-text("Download")', {
+      timeout: 10000,
+    });
+    const downloadButton = page.locator('button:has-text("Download")');
+    await expect(downloadButton).toBeVisible();
+    await downloadButton.click();
+
+    // Tunggu unduhan selesai
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.locator('button:has-text("Download")').click(),
+    ]);
+
+    // Verifikasi file yang diunduh memiliki nama yang benar
+    const fileName = await download.suggestedFilename();
+    expect(fileName).toBe("products_filtered.xlsx");
+  });
+
+  test("Pagination bekerja dengan benar saat mengubah halaman dan jumlah baris per halaman", async ({ page }) => {
+    await page.waitForTimeout(2000); // Menunggu sejenak untuk elemen rendering
+    await page.waitForSelector("div[data-testid='TablePagination']", {
+      state: "visible",
+      timeout: 13000,
+    });
+
+    await page.waitForTimeout(2000);
+    // Verifikasi elemen pagination terlihat
+    const pagination = page.locator("div[data-testid='TablePagination']");
+    await pagination.waitFor({ state: "visible", timeout: 10000 });
+    await expect(pagination).toBeVisible();
+
+    // Ubah jumlah baris per halaman
+    const rowsPerPageSelect = page.locator('select[aria-label="rows per page"]');
+    await rowsPerPageSelect.selectOption("25");
+
+    // Verifikasi jumlah baris di tabel berubah
+    const rowCount = await page.locator("table tbody tr").count();
+    expect(rowCount).toBeGreaterThan(10);
+    expect(rowCount).toBeLessThanOrEqual(25);
+
+    // Pindah ke halaman berikutnya
+    const nextPageButton = page.locator('button[aria-label="Next page"]');
+    await nextPageButton.click();
+
+    // Verifikasi halaman berubah
+    await expect(page.locator("table tbody tr")).toBeVisible();
+  });
+
+  test("Harus mengarahkan halaman ke halaman add-product saat FAB diklik", async ({ page }) => {
+    // Menemukan fab dengan selector
+    const fabButton = page.locator('button[aria-label="add"]');
+
+    await fabButton.waitFor({ state: "visible", timeout: 5000 });
+
+    // Verifikasi bahwa fab ada di halaman
     await expect(fabButton).toBeVisible();
     await fabButton.click();
     await expect(page).toHaveURL("http://localhost:5173/add-product");
 
-    //melakukan verifikasi bahwa form yang berada pada halaman add product ada atau muncul
+    // Melakukan verifikasi bahwa form yang berada pada halaman add-product ada atau muncul
     const productFormInput = page.locator('text="Add a New Product"');
     await expect(productFormInput).toBeVisible();
   });
+
+  test("Harus menghapus produk", async ({ page }) => {
+    // Klik tombol Delete pada baris pertama tabel
+    const firstRowDeleteButton = page.locator(
+      "table tbody tr:first-child button:has-text('Delete')"
+    );
+    await firstRowDeleteButton.click();
+
+    // Verifikasi modal konfirmasi muncul
+    const modal = page.locator(".modal");
+    await expect(modal).toBeVisible();
+
+    // Klik tombol konfirmasi di modal
+    const confirmButton = modal.locator('button:has-text("Confirm")');
+    await confirmButton.click();
+
+    // Verifikasi jumlah baris setelah penghapusan berkurang
+    const rowCountBeforeDelete = await page.locator("table tbody tr").count();
+    const rowCountAfterDelete = await page.locator("table tbody tr").count();
+    expect(rowCountAfterDelete).toBeLessThan(rowCountBeforeDelete);
+  });
 });
-
-
