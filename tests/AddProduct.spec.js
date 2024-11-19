@@ -29,7 +29,7 @@ test.describe("Add Product Form Test", () => {
     await expect(alertMessage).toBeVisible();
   });
 
-  //Test jika input hanya spasi
+  // Test jika input hanya spasi
   test("Menampilkan error ketika input berupa spasi", async ({ page }) => {
     await page.fill('input[name="title"]', " ");
     await page.fill('input[name="price"]', "0");
@@ -38,11 +38,11 @@ test.describe("Add Product Form Test", () => {
     await page.fill('input[name="category"]', " ");
 
     await page.click('button[type="submit"]');
+
+    const alertMessage = page.locator('text="All fields are required"');
     await page.waitForSelector('text="All fields are required"', {
       timeout: 10000,
     });
-
-    const alertMessage = page.locator('text="All fields are required"');
     await expect(alertMessage).toBeVisible();
   });
 

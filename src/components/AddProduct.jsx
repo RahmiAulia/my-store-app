@@ -73,10 +73,8 @@ const AddProduct = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Convert price to a number for accurate validation
     const priceValue = Number(productData.price);
 
-    // Validate that price is not negative
     if (priceValue < 0) {
       NiceModal.show(AlertModal, {
         message: "Price cannot be negative!",
@@ -85,8 +83,7 @@ const AddProduct = () => {
       return;
     }
 
-    // Validate that all fields are filled and do not contain only spaces
-    if (Object.values(productData).some((field) => field.trim() === "")) {
+    if (Object.values(productData).some((field) => field.trim() === " ")) {
       NiceModal.show(AlertModal, {
         message: "All fields are required and cannot contain only spaces.",
         isSuccess: false,
@@ -94,7 +91,6 @@ const AddProduct = () => {
       return;
     }
 
-    // Trigger the mutation to add the product
     mutation.mutate(productData);
   };
 

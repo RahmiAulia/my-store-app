@@ -52,6 +52,8 @@ const UpdateProduct = () => {
     },
   });
 
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProductData((prevData) => ({
@@ -62,6 +64,21 @@ const UpdateProduct = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (productData.price < 0) {
+      NiceModal.show(AlertModal, {
+        message: "Price cannot be negative!",
+        isSuccess: false,
+      });
+      return;
+    }
+
+    if (Object.values(productData).some((field) => field.trim() === "")) {
+      NiceModal.show(AlertModal, {
+        message: "All fields are required and cannot contain only spaces.",
+        isSuccess: false,
+      });
+      return;
+    } 
     updateMutation.mutate(productData);
   };
 
